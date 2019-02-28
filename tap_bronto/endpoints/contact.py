@@ -4,9 +4,8 @@ from tap_bronto.state import incorporate, save_state
 from tap_bronto.stream import Stream
 from funcy import project
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
-import pytz
 import singer
 import socket
 import zeep
@@ -80,7 +79,8 @@ class ContactStream(Stream):
         LOGGER.info('Syncing contacts.')
 
         start = self.get_start_date(table)
-        end = start
+        end = self.get_end_date(table)
+        current_date = start
         interval = timedelta(hours=6)
 
         def flatten(item):
@@ -89,13 +89,12 @@ class ContactStream(Stream):
             return dict(item, **read_only_data)
 
 
-        while end < datetime.now(pytz.utc):
-            start = end
-            end = start + interval
+        while current_date < end:
+            projected_interval_date = current_date + interval
             LOGGER.info("Fetching contacts modified from {} to {}".format(
-                start, end))
+                current_date, projected_interval_date))
 
-            _filter = self.make_filter(start, end)
+            _filter = self.make_filter(current_date, projected_interval_date)
 
             pageNumber = 1
             hasMore = True
@@ -140,10 +139,12 @@ class ContactStream(Stream):
 
                 pageNumber = pageNumber + 1
 
-            self.state = incorporate(
-                self.state, table, self.REPLICATION_KEY,
-                start.replace(microsecond=0).isoformat())
+            current_date = projected_interval_date
 
-            save_state(self.state)
+        self.state = incorporate(
+            self.state, table, self.REPLICATION_KEY,
+            start.replace(microsecond=0).isoformat())
+
+        save_state(self.state)
 
         LOGGER.info("Done syncing contacts.")

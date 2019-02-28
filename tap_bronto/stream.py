@@ -1,9 +1,11 @@
 import singer
 import zeep
 import sys
+import pytz
 
 from singer import metadata
 from tap_bronto.state import get_last_record_value_for_table
+from datetime import datetime
 from dateutil import parser
 from zeep.exceptions import Fault
 
@@ -57,6 +59,14 @@ class Stream:
             raise RuntimeError('Unknown replication method {}!'
                                .format(replication_method))
         return start
+
+    def get_end_date(self, table):
+        LOGGER.info('Choosing end date for table {}'.format(table))
+        default_end_string = self.config.get(
+            'end_date',
+            datetime.now(pytz.utc))
+        default_end = parser.parse(default_end_string)
+        return default_end
 
     def login(self):
         LOGGER.info("Logging in")
