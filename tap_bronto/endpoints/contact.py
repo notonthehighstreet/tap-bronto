@@ -2,7 +2,6 @@ from tap_bronto.schemas import get_field_selector, is_selected, \
     with_properties, CONTACT_SCHEMA
 from tap_bronto.state import incorporate, save_state
 from tap_bronto.stream import Stream
-from funcy import project
 
 from datetime import timedelta
 
@@ -31,9 +30,10 @@ class ContactStream(Stream):
         return _filter(type = 'AND', modified=[sf, ef])
 
     def any_selected(self, field_names):
-        sub_catalog = project(field_names, self.catalog.get('schema'))
-        return any([is_selected(field_catalog)
-                    for field_catalog in sub_catalog])
+        catalog = set(self.catalog.get('schema', {}).get('properties'))
+        is_remaining = any([field == c for c in catalog for field in field_names])
+        return is_remaining
+
     def sync(self):
         key_properties = self.catalog.get('key_properties')
         table = self.TABLE
