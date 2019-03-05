@@ -116,7 +116,7 @@ class ContactStream(Stream):
                 except (socket.timeout, ConnectionError):
                     retry_count += 1
                     if retry_count >= 10:
-                        LOGGER.error("Retried more than five times, moving on!")
+                        LOGGER.error("Retried more than ten times, moving on!")
                         raise
                     LOGGER.warn("Timeout caught, retrying request")
                     continue
