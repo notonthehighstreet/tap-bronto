@@ -10,6 +10,7 @@ import singer
 import socket
 import zeep
 from zeep.exceptions import Fault
+from requests.exceptions import ConnectionError
 
 LOGGER = singer.get_logger()  # noqa
 
@@ -112,9 +113,9 @@ class ContactStream(Stream):
                         includeRFMData=includeRFMData,
                         includeEngagementData=includeEngagementData)
 
-                except socket.timeout:
+                except (socket.timeout, ConnectionError):
                     retry_count += 1
-                    if retry_count >= 5:
+                    if retry_count >= 10:
                         LOGGER.error("Retried more than five times, moving on!")
                         raise
                     LOGGER.warn("Timeout caught, retrying request")
