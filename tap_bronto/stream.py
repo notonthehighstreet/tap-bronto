@@ -71,7 +71,8 @@ class Stream:
     def should_rewind(self):
         rewind = self.config.get(
             'activity_rewind',
-            True)
+            'True')
+        rewind = rewind == 'True'
         return rewind
 
     def login(self):
