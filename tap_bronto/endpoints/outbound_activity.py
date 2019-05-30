@@ -59,7 +59,7 @@ class OutboundActivityStream(Stream):
         while current_date < end:
             projected_interval_date = current_date + interval
             LOGGER.info("Fetching activities from {} to {}".format(
-                start, projected_interval_date))
+                current_date, projected_interval_date))
 
             _filter = self.make_filter(current_date, projected_interval_date)
             field_selector = get_field_selector(self.catalog,
