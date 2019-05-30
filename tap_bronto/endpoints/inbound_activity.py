@@ -52,7 +52,8 @@ class InboundActivityStream(Stream):
             key_properties=key_properties)
 
         start = self.get_start_date(table)
-        end = start
+        end = self.get_end_date(table)
+        current_date = start
         interval = timedelta(hours=1)
 
         LOGGER.info('Syncing inbound activities.')
@@ -60,13 +61,12 @@ class InboundActivityStream(Stream):
         field_selector = get_field_selector(self.catalog,
                                             self.catalog.get('schema'))
 
-        while end < datetime.now(pytz.utc):
-            start = end
-            end = start + interval
+        while current_date < end:
+            projected_interval_date = current_date + interval
             LOGGER.info("Fetching activities from {} to {}".format(
-                start, end))
+                start, projected_interval_date))
 
-            _filter = self.make_filter(start, end)
+            _filter = self.make_filter(current_date, projected_interval_date)
             hasMore = True
 
             while hasMore:
@@ -109,10 +109,12 @@ class InboundActivityStream(Stream):
                 if len(results) == 0:
                     hasMore = False
 
-            self.state = incorporate(
-                self.state, table, self.REPLICATION_KEY,
-                start.replace(microsecond=0).isoformat())
+            current_date = projected_interval_date
 
-            save_state(self.state)
+        self.state = incorporate(
+            self.state, table, self.REPLICATION_KEY,
+            start.replace(microsecond=0).isoformat())
+
+        save_state(self.state)
 
         LOGGER.info('Done syncing inbound activities.')
