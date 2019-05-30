@@ -38,9 +38,11 @@ class OutboundActivityStream(Stream):
                         'Using a start date of -30 days.')
             return earliest_available
         else:
-            LOGGER.info('Rewinding three days, since activities can change...')
+            if self.should_rewind():
+                LOGGER.info('Rewinding three days, since activities can change...')
+                start = start - timedelta(days=3)
 
-        return start - timedelta(days=3)
+        return start
 
     def sync(self):
         key_properties = self.catalog.get('key_properties')

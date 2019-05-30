@@ -68,6 +68,12 @@ class Stream:
         default_end = parser.parse(default_end_string)
         return default_end
 
+    def should_rewind(self):
+        rewind = self.config.get(
+            'activity_rewind',
+            True)
+        return rewind
+
     def login(self):
         LOGGER.info("Logging in")
         try:
