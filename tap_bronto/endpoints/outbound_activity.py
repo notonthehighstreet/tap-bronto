@@ -11,6 +11,8 @@ import pytz
 import singer
 import zeep
 
+from requests.exceptions import ConnectionError
+
 LOGGER = singer.get_logger()  # noqa
 
 
@@ -68,10 +70,18 @@ class OutboundActivityStream(Stream):
             hasMore = True
 
             while hasMore:
+                retry_count = 0
                 try:
                     results = \
                         self.client.service.readRecentOutboundActivities(
                             filter=_filter)
+                except ConnectionError:
+                    retry_count += 1
+                    if retry_count >= 10:
+                        LOGGER.error("Retried more than ten times, moving on!")
+                        raise
+                    LOGGER.warn("Timeout caught, retrying request")
+                    continue
                 except Fault as e:
                     if '116' in e.message:
                         hasMore = False
